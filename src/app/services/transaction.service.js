@@ -32,7 +32,7 @@ exports.findAll = async (user_id) => {
   try {
     const transactions = await Transaction.findAll({
       where: { user_id: user_id },
-      order: [["date", "ASC"]],
+      order: [["date", "DESC"]],
     });
 
     return transactions;

@@ -31,17 +31,22 @@ const validateTransactionData = (transactionData) => {
     errors.push("Valor é obrigatório");
   }
 
-  if (transactionData.value !== int ) {
-    errors.push("O valor de uma transação deve ser um inteiro que represente o valor em centavos");
+  const numericValue = Number(transactionData.value);
+
+  if (isNaN(numericValue)) {
+    errors.push("Valor deve ser um número válido");
+  } else {
+    if (!Number.isInteger(numericValue))
+      errors.push("O valor deve ser um número inteiro representando centavos");
   }
 
-  if (!transactionData.member_id || !transactionData.ministry_id) {
-    errors.push("Um transação deve está relacionada a um membro ou a um ministério");
+  if (!transactionData.member_id && !transactionData.ministry_id) {
+    errors.push("Uma transação deve estar relacionada a um membro ou a um ministério");
   }
 
-  if (transactionData.member_id || transactionData.ministry_id) {
+  if (transactionData.member_id && transactionData.ministry_id) {
     errors.push(
-      "Um transação deve não pode estar relacionada a um membro e um ministério ao mesmo tempo"
+      "Uma transação não pode estar relacionada a um membro e um ministério ao mesmo tempo"
     );
   }
 
