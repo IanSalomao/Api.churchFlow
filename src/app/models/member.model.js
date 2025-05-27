@@ -1,52 +1,44 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../../core/db_connect');
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-const Member = sequelize.define(
-  "Member",
+const memberSchema = new Schema(
   {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
     name: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     email: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      type: String,
+      required: false,
     },
     phone: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      type: String,
+      required: false,
     },
     birth_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
+      type: Date,
+      required: true,
     },
     batism_date: {
-      type: DataTypes.DATE,
-      allowNull: true,
+      type: Date,
+      required: false,
     },
     status: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+      type: Boolean,
+      required: true,
+      default: true,
     },
     user_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: "User",
-        key: "id",
-      },
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   {
-    tableName: "members",
-    timestamps: false,
+    timestamps: true,
   }
 );
 
+const Member = mongoose.model("Member", memberSchema);
 
 module.exports = Member;

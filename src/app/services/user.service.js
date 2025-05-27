@@ -1,9 +1,8 @@
 const User = require("../models/user.model");
 
-
 exports.register = async (name, email, password) => {
   try {
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       const error = new Error("Email já cadastrado");
@@ -23,28 +22,25 @@ exports.register = async (name, email, password) => {
   }
 };
 
-
 exports.searchById = async (id) => {
   try {
-    return await User.findByPk(id);
+    return await User.findById(id);
   } catch (error) {
     throw new Error(`Erro ao buscar usuário: ${error.message}`);
   }
 };
 
-
 exports.searchByEmail = async (email) => {
   try {
-    return await User.findOne({ where: { email } });
+    return await User.findOne({ email });
   } catch (error) {
     throw new Error(`Erro ao buscar usuário por email: ${error.message}`);
   }
 };
 
-
 exports.update = async (id, updateData) => {
   try {
-    const user = await User.findByPk(id);
+    const user = await User.findById(id);
 
     if (!user) {
       return null;
@@ -52,7 +48,7 @@ exports.update = async (id, updateData) => {
 
     if (updateData.email && updateData.email !== user.email) {
       const existingUser = await User.findOne({
-        where: { email: updateData.email },
+        email: updateData.email,
       });
 
       if (existingUser) {
@@ -72,22 +68,20 @@ exports.update = async (id, updateData) => {
   }
 };
 
-
 exports.delete = async (id) => {
   try {
-    const user = await User.findByPk(id);
+    const user = await User.findById(id);
 
     if (!user) {
       return false;
     }
 
-    await user.destroy();
+    await User.findByIdAndDelete(id);
     return true;
   } catch (error) {
     throw new Error(`Erro ao excluir usuário: ${error.message}`);
   }
 };
-
 
 exports.sanitizeUser = (user) => {
   if (!user) return null;

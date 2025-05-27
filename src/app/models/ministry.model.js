@@ -1,48 +1,37 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../../core/db_connect');
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-const Ministry = sequelize.define(
-  "Ministry",
+const ministrySchema = new Schema(
   {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
     name: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     description: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      type: String,
+      required: false,
     },
-    status:{
-      type: DataTypes.BOOLEAN,
-      allowNull: false
+    status: {
+      type: Boolean,
+      required: true,
+      default: true,
     },
     member_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "Members",
-        key: "id",
-      },
+      type: Schema.Types.ObjectId,
+      ref: "Member",
+      required: true,
     },
     user_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: "User",
-        key: "id",
-      },
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   {
-    tableName: "ministries",
-    timestamps: false,
+    timestamps: true,
   }
 );
 
+const Ministry = mongoose.model("Ministry", ministrySchema);
 
 module.exports = Ministry;

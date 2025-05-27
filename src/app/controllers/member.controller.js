@@ -10,7 +10,6 @@ const MESSAGES = {
   INVALID_DATE: "Formato de data inválido",
 };
 
-
 const createResponse = (res, statusCode, message, data = null) => {
   const response = { mensagem: message };
 
@@ -20,7 +19,6 @@ const createResponse = (res, statusCode, message, data = null) => {
 
   return res.status(statusCode).json(response);
 };
-
 
 const validateMemberData = (memberData) => {
   const errors = [];
@@ -52,12 +50,11 @@ const validateMemberData = (memberData) => {
   return errors.length > 0 ? errors : null;
 };
 
-
 exports.createMember = async (req, res) => {
   try {
-  const user_id = req.user.id;
-  if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
-    
+    const user_id = req.user._id;
+    if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
+
     const memberData = { user_id: user_id, ...req.body };
 
     const validationErrors = validateMemberData(memberData);
@@ -74,36 +71,27 @@ exports.createMember = async (req, res) => {
   }
 };
 
-
 exports.listMembers = async (req, res) => {
   try {
-  const user_id = req.user.id;
-  if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
+    const user_id = req.user._id;
+    if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
 
     const members = await memberService.findAll(user_id);
 
-    return createResponse(
-      res,
-      200,
-      `${members.length} membros encontrados`,
-      members
-    );
+    return createResponse(res, 200, `${members.length} documentos encontrados`, members);
   } catch (error) {
-    console.error("Erro ao listar membros:", error);
+    console.error("Erro ao listar documentos:", error);
     return createResponse(res, 500, MESSAGES.SERVER_ERROR);
   }
 };
 
-
 exports.getMemberById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user_id = req.user.id;
+    const user_id = req.user._id;
     if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
 
-    if (!id)
-      return createResponse(res, 400, "ID do membro é obrigatório");
-    
+    if (!id) return createResponse(res, 400, "ID do membro é obrigatório");
 
     const member = await memberService.findById(id, user_id);
 
@@ -118,16 +106,13 @@ exports.getMemberById = async (req, res) => {
   }
 };
 
-
 exports.updateMember = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
 
-    const user_id = req.user.id;
-    if (!user_id)
-      return createResponse(res, 400, "ID do usuário é obrigatório");
-
+    const user_id = req.user._id;
+    if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
 
     if (!id) {
       return createResponse(res, 400, "ID do membro é obrigatório");
@@ -149,26 +134,23 @@ exports.updateMember = async (req, res) => {
 
     return createResponse(res, 200, MESSAGES.MEMBER_UPDATED, updatedMember);
   } catch (error) {
-
     console.error("Erro ao atualizar membro:", error);
     return createResponse(res, 500, MESSAGES.SERVER_ERROR);
   }
 };
 
-
 exports.deleteMember = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user_id = req.user.id;
-    if (!user_id)
-      return createResponse(res, 400, "ID do usuário é obrigatório");
+    const user_id = req.user._id;
+    if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
 
     if (!id) {
       return createResponse(res, 400, "ID do membro é obrigatório");
     }
 
-    const success = await memberService.delete(id,user_id);
+    const success = await memberService.delete(id, user_id);
 
     if (!success) {
       return createResponse(res, 404, MESSAGES.MEMBER_NOT_FOUND);

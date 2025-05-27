@@ -1,15 +1,18 @@
-const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const mongoose = require("mongoose");
+require("dotenv").config();
 
-const sequelize = new Sequelize(process.env.DIRECT_URL, {
-  dialect: "postgres",
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false, // necessário para conexões com SSL do Supabase
-    },
-  },
-  logging: false,
-});
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      dbName: "churchFlow",
+    });
+    console.log(`MongoDB Conectado: ${conn.connection.host}`);
+  } catch (error) {
+    console.error("Erro ao conectar no MongoDB:", error);
+    process.exit(1);
+  }
+};
 
-module.exports = sequelize;
+module.exports = connectDB;

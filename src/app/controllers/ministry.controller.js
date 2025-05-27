@@ -12,7 +12,6 @@ const MESSAGES = {
   ORPHAN_ERROR: "O atributo relacional informado está incorreto ou não existe",
 };
 
-
 const createResponse = (res, statusCode, message, data = null) => {
   const response = { mensagem: message };
 
@@ -22,7 +21,6 @@ const createResponse = (res, statusCode, message, data = null) => {
 
   return res.status(statusCode).json(response);
 };
-
 
 const validateMinistryData = (ministryData) => {
   const errors = [];
@@ -46,12 +44,11 @@ const validateMinistryData = (ministryData) => {
   return errors.length > 0 ? errors : null;
 };
 
-
 exports.createMinistry = async (req, res) => {
   try {
-  const user_id = req.user.id;
-  if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
-    
+    const user_id = req.user._id;
+    if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
+
     const ministryData = { user_id: user_id, ...req.body };
 
     const validationErrors = validateMinistryData(ministryData);
@@ -62,7 +59,7 @@ exports.createMinistry = async (req, res) => {
     const newMinistry = await ministryService.create(ministryData);
 
     if (!newMinistry) {
-    return createResponse(res, 400, MESSAGES.ORPHAN_ERROR);
+      return createResponse(res, 400, MESSAGES.ORPHAN_ERROR);
     }
 
     return createResponse(res, 201, MESSAGES.MINISTRY_CREATED, newMinistry);
@@ -72,36 +69,27 @@ exports.createMinistry = async (req, res) => {
   }
 };
 
-
 exports.listMinistries = async (req, res) => {
   try {
-  const user_id = req.user.id;
-  if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
+    const user_id = req.user._id;
+    if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
 
     const ministries = await ministryService.findAll(user_id);
 
-    return createResponse(
-      res,
-      200,
-      `${ministries.length} ministérios encontrados`,
-      ministries
-    );
+    return createResponse(res, 200, `${ministries.length} ministérios encontrados`, ministries);
   } catch (error) {
     console.error("Erro ao listar ministérios:", error);
     return createResponse(res, 500, MESSAGES.SERVER_ERROR);
   }
 };
 
-
 exports.getMinistryById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user_id = req.user.id;
+    const user_id = req.user._id;
     if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
 
-    if (!id)
-      return createResponse(res, 400, "ID do ministério é obrigatório");
-    
+    if (!id) return createResponse(res, 400, "ID do ministério é obrigatório");
 
     const ministry = await ministryService.findById(id, user_id);
 
@@ -116,16 +104,13 @@ exports.getMinistryById = async (req, res) => {
   }
 };
 
-
 exports.updateMinistry = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
 
-    const user_id = req.user.id;
-    if (!user_id)
-      return createResponse(res, 400, "ID do usuário é obrigatório");
-
+    const user_id = req.user._id;
+    if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
 
     if (!id) {
       return createResponse(res, 400, "ID do ministério é obrigatório");
@@ -143,26 +128,23 @@ exports.updateMinistry = async (req, res) => {
 
     return createResponse(res, 200, MESSAGES.MINISTRY_UPDATED, updatedMinistry);
   } catch (error) {
-
     console.error("Erro ao atualizar ministério:", error);
     return createResponse(res, 500, MESSAGES.SERVER_ERROR);
   }
 };
 
-
 exports.deleteMinistry = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user_id = req.user.id;
-    if (!user_id)
-      return createResponse(res, 400, "ID do usuário é obrigatório");
+    const user_id = req.user._id;
+    if (!user_id) return createResponse(res, 400, "ID do usuário é obrigatório");
 
     if (!id) {
       return createResponse(res, 400, "ID do ministério é obrigatório");
     }
 
-    const success = await ministryService.delete(id,user_id);
+    const success = await ministryService.delete(id, user_id);
 
     if (!success) {
       return createResponse(res, 404, MESSAGES.MINISTRY_NOT_FOUND);
