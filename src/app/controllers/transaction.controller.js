@@ -10,6 +10,7 @@ const MESSAGES = {
   MISSING_FIELDS: "Campos obrigatórios não fornecidos",
   INVALID_DATE: "Formato de data inválido",
   ORPHAN_ERROR: "O atributo relacional informado está incorreto ou não existe",
+  INVALID_CATEGORIES: "O campo categories deve ser um array de strings",
 };
 
 const createResponse = (res, statusCode, message, data = null) => {
@@ -45,6 +46,18 @@ const validateTransactionData = (transactionData) => {
 
   if (!transactionData.user_id) {
     errors.push("ID do usuário é obrigatório");
+  }
+
+  // Validação do campo categories
+  if (transactionData.categories !== undefined) {
+    if (!Array.isArray(transactionData.categories)) {
+      errors.push("O campo categories deve ser um array");
+    } else {
+      const hasInvalidCategory = transactionData.categories.some((category) => typeof category !== "string" || category.trim().length === 0);
+      if (hasInvalidCategory) {
+        errors.push("Todas as categorias devem ser strings não vazias");
+      }
+    }
   }
 
   return errors.length > 0 ? errors : null;

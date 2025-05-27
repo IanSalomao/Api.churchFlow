@@ -16,6 +16,11 @@ const transactionSchema = new Schema(
       type: String,
       required: false,
     },
+    categories: {
+      type: [String],
+      required: false,
+      default: [],
+    },
     member_id: {
       type: Schema.Types.ObjectId,
       ref: "Member",
