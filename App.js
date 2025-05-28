@@ -4,6 +4,7 @@ const userRoutes = require("./src/routes/user.route");
 const memberRoutes = require("./src/routes/member.route");
 const ministryRoutes = require("./src/routes/ministry.route");
 const transactionRoutes = require("./src/routes/transaction.route");
+const metricsRoutes = require("./src/routes/metrics.route");
 
 const connectDB = require("./src/core/db_connect");
 
@@ -14,6 +15,7 @@ App.use("/user", userRoutes);
 App.use("/member", memberRoutes);
 App.use("/ministry", ministryRoutes);
 App.use("/transaction", transactionRoutes);
+App.use("/metrics", metricsRoutes);
 
 const PORT = process.env.PORT || 3000;
 
