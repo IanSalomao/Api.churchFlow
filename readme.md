@@ -80,6 +80,34 @@ Retorna métricas financeiras detalhadas da igreja.
 - `start_date` (opcional): Data inicial para filtrar (formato: YYYY-MM-DD)
 - `end_date` (opcional): Data final para filtrar (formato: YYYY-MM-DD)
 
+**MongoDB Queries:**
+
+```javascript
+// Agregação principal para total de receita por categoria
+db.transactions.aggregate([
+  {
+    $match: {
+      user_id: ObjectId("user_id"),
+      date: {
+        $gte: ISODate("2024-01-01"),
+        $lte: ISODate("2024-12-31"),
+      },
+    },
+  },
+  { $unwind: "$categories" },
+  {
+    $group: {
+      _id: "$categories",
+      total: { $sum: "$value" },
+    },
+  },
+]);
+
+// Explicação: Usamos $match para filtrar por usuário e período,
+// $unwind para "explodir" o array de categorias e poder agrupar por cada categoria individual,
+// e $group para somar os valores por categoria
+```
+
 **Response:**
 
 ```javascript
@@ -109,6 +137,45 @@ Retorna métricas financeiras detalhadas da igreja.
 #### GET /metrics/members
 
 Retorna métricas relacionadas aos membros da igreja.
+
+**MongoDB Queries:**
+
+```javascript
+// Query principal para distribuição de idade e status
+db.members.aggregate([
+  {
+    $match: {
+      user_id: ObjectId("user_id"),
+    },
+  },
+  {
+    $facet: {
+      status: [
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 },
+          },
+        },
+      ],
+      baptism: [
+        {
+          $match: {
+            batism_date: {
+              $exists: true,
+              $ne: null,
+            },
+          },
+        },
+        { $count: "total" },
+      ],
+    },
+  },
+]);
+
+// Explicação: Utilizamos $facet para executar múltiplas agregações em uma única query,
+// otimizando a performance. Isso nos permite obter diferentes métricas em uma única chamada ao banco
+```
 
 **Response:**
 
@@ -147,6 +214,47 @@ Retorna métricas relacionadas aos membros da igreja.
 
 Retorna métricas relacionadas aos ministérios da igreja.
 
+**MongoDB Queries:**
+
+```javascript
+// Query principal para dados dos ministérios e suas transações
+db.ministries.aggregate([
+  {
+    $match: {
+      user_id: ObjectId("user_id"),
+    },
+  },
+  {
+    $lookup: {
+      from: "members",
+      localField: "member_id",
+      foreignField: "_id",
+      as: "leader",
+    },
+  },
+  {
+    $lookup: {
+      from: "transactions",
+      localField: "_id",
+      foreignField: "ministry_id",
+      as: "transactions",
+    },
+  },
+  {
+    $project: {
+      ministry_name: "$name",
+      leader: { $arrayElemAt: ["$leader.name", 0] },
+      total_transactions: { $sum: "$transactions.value" },
+      transaction_count: { $size: "$transactions" },
+    },
+  },
+]);
+
+// Explicação: Utilizamos $lookup para fazer joins com as coleções de members e transactions,
+// permitindo buscar informações do líder e das transações em uma única query.
+// O $project formata os dados no formato desejado para a resposta
+```
+
 **Response:**
 
 ```javascript
@@ -177,6 +285,44 @@ Retorna métricas relacionadas aos ministérios da igreja.
 #### GET /metrics/dashboard
 
 Retorna métricas gerais para o dashboard.
+
+**MongoDB Queries:**
+
+```javascript
+// Query para estatísticas recentes
+const weekAgo = new Date(new Date().setDate(new Date().getDate() - 7));
+
+db.transactions.aggregate([
+  {
+    $match: {
+      user_id: ObjectId("user_id"),
+      date: { $gte: weekAgo },
+    },
+  },
+  {
+    $facet: {
+      categories: [
+        { $unwind: "$categories" },
+        {
+          $group: {
+            _id: "$categories",
+            total: { $sum: "$value" },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { total: -1 } },
+        { $limit: 5 },
+      ],
+      recent_transactions: [{ $count: "total" }],
+    },
+  },
+]);
+
+// Explicação: Usamos $facet para combinar múltiplas agregações,
+// incluindo top categorias e contagens recentes.
+// O $sort e $limit garantem que pegamos apenas as 5 principais categorias.
+// Esta estrutura minimiza o número de queries ao banco
+```
 
 **Response:**
 

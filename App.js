@@ -5,12 +5,14 @@ const memberRoutes = require("./src/routes/member.route");
 const ministryRoutes = require("./src/routes/ministry.route");
 const transactionRoutes = require("./src/routes/transaction.route");
 const metricsRoutes = require("./src/routes/metrics.route");
+const welcomeRoutes = require("./src/routes/welcome.route");
 
 const connectDB = require("./src/core/db_connect");
 
 require("dotenv").config();
 
 App.use(express.json());
+App.use("/", welcomeRoutes);
 App.use("/user", userRoutes);
 App.use("/member", memberRoutes);
 App.use("/ministry", ministryRoutes);

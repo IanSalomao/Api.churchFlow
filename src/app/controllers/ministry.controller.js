@@ -13,7 +13,7 @@ const MESSAGES = {
 };
 
 const createResponse = (res, statusCode, message, data = null) => {
-  const response = { mensagem: message };
+  const response = { message: message };
 
   if (data) {
     response.data = data;
