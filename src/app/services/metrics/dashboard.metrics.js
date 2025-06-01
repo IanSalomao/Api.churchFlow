@@ -72,7 +72,7 @@ exports.getDashboardMetrics = async (user_id) => {
       {
         $match: {
           user_id: new mongoose.Types.ObjectId(user_id),
-          value: { $gt: 0 },
+          value: { $lt: 0 },
         },
       },
       {
