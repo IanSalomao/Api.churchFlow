@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Member = require("../../models/member.model");
 const Ministry = require("../../models/ministry.model");
 const Transaction = require("../../models/transaction.model");
-const { formatMoneyValue } = require("./utils");
+const { formatMoneyValue, formatPercentage } = require("./utils");
 
 exports.getDashboardMetrics = async (user_id) => {
   try {
@@ -17,7 +17,7 @@ exports.getDashboardMetrics = async (user_id) => {
       Ministry.countDocuments({ user_id, updatedAt: { $gte: weekAgo } }),
       Transaction.aggregate([
         {
-          $match: { user_id: new mongoose.Types.ObjectId(user_id) },
+          $match: { user_id: new mongoose.Types.ObjectId(user_id), value: { $gt: 0 } },
         },
         { $unwind: "$categories" },
         {
@@ -48,19 +48,16 @@ exports.getDashboardMetrics = async (user_id) => {
             total_transactions: { $sum: "$transactions.value" },
           },
         },
-        { $sort: { total_transactions: -1 } },
+        { $sort: { total_transactions: 1 } },
         { $limit: 5 },
       ]),
     ]);
 
-    const monthlyTotal = await Transaction.aggregate([
+    const totalInflows = await Transaction.aggregate([
       {
         $match: {
           user_id: new mongoose.Types.ObjectId(user_id),
-          date: {
-            $gte: new Date(now.getFullYear(), now.getMonth(), 1),
-            $lt: new Date(now.getFullYear(), now.getMonth() + 1, 1),
-          },
+          value: { $gt: 0 },
         },
       },
       {
@@ -71,22 +68,36 @@ exports.getDashboardMetrics = async (user_id) => {
       },
     ]);
 
+    const totalOutflows = await Transaction.aggregate([
+      {
+        $match: {
+          user_id: new mongoose.Types.ObjectId(user_id),
+          value: { $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$value" },
+        },
+      },
+    ]);
 
     const totalIncome = await Transaction.aggregate([
       {
         $match: {
-          user_id: new mongoose.Types.ObjectId(user_id)
-        }
+          user_id: new mongoose.Types.ObjectId(user_id),
+        },
       },
       {
         $group: {
           _id: null,
           total: {
-            $sum: "$value"
-          }
-        }
-      }
-    ])
+            $sum: "$value",
+          },
+        },
+      },
+    ]);
 
     return {
       quick_stats: {
@@ -100,11 +111,13 @@ exports.getDashboardMetrics = async (user_id) => {
       },
       financial_health: {
         total_income: formatMoneyValue(totalIncome[0]?.total || 0),
+        total_inflows: formatMoneyValue(totalInflows[0]?.total || 0),
+        total_outflows: formatMoneyValue(totalOutflows[0]?.total || 0),
       },
       top_categories: topCategories.map((category) => ({
         name: category._id,
         total: formatMoneyValue(category.total),
-        percentage: (category.total / (monthlyTotal[0]?.total || 1)) * 100,
+        percentage: formatPercentage(category.total, totalInflows[0]?.total || 1),
       })),
       top_ministries: topMinistries.map((ministry) => ({
         name: ministry.name,
