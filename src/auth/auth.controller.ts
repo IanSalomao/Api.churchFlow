@@ -1,6 +1,13 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 @ApiTags('auth')
@@ -18,5 +25,19 @@ export class AuthController {
   })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Autentica a igreja e retorna o token de acesso; rememberMe define a expiração (24h ou 30 dias)',
+  })
+  @ApiOkResponse({ description: 'Retorna token e expiresAt.' })
+  @ApiUnauthorizedResponse({
+    description: 'INVALID_CREDENTIALS — e-mail ou senha incorretos.',
+  })
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
   }
 }
