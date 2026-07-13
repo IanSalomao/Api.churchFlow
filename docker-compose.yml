@@ -1,0 +1,79 @@
+name: church-flow-api
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-churchflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-churchflow}
+      POSTGRES_DB: ${POSTGRES_DB:-churchflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-churchflow} -d ${POSTGRES_DB:-churchflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # API S3
+      - "9001:9001" # Console web
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-churchflow}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-churchflow-secret}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Cria o bucket de relatórios automaticamente e encerra
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing local/$${S3_BUCKET}
+      "
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-churchflow}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-churchflow-secret}
+      S3_BUCKET: ${S3_BUCKET:-church-flow-reports}
+
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    profiles:
+      - dev
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  minio_data:
