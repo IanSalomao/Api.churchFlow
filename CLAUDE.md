@@ -68,16 +68,17 @@ Cada **igreja** é um tenant. É um schema único no Postgres — **não** há s
 - Tempo de expiração varia conforme o checkbox "Lembrar-me" do login: sessão curta sem marcar, 30 dias marcando. Os dois valores de expiração devem ser configuráveis via env var, não hardcoded.
 - Recuperação de senha: token de uso único, expiração curta (ex.: 1h), enviado por e-mail via Resend, conforme fluxo de 4 passos descrito no spec.
 
-> [!warning] Ponto em aberto — revogação imediata na exclusão de conta
-> O spec exige que a exclusão de conta desative o acesso **imediatamente**. Como a estratégia de auth é JWT stateless sem lista de revogação, um JWT emitido antes da exclusão continua tecnicamente válido até expirar (podendo ser até 30 dias, com "lembrar-me"). Antes de implementar o endpoint de exclusão de conta, decidir a mitigação — ex.: guard que confere `deletedAt`/status da igreja no banco a cada request autenticado, ou uma blocklist leve. Não assumir uma solução sem confirmar.
+> [!note] Resolvido — revogação imediata na exclusão de conta
+> O spec exige que a exclusão de conta desative o acesso **imediatamente**. Decisão implementada (2026-07-13): o `JwtAuthGuard` global confere no banco, a cada request autenticado, se a igreja segue ativa (`findFirst` por PK com `deletedAt: null`). Conta excluída → 401 na hora, mesmo com JWT criptograficamente válido por até 30 dias. Custo aceito: um SELECT por PK por request.
 
 ## Estrutura de módulos
 
 Módulos organizados por feature (não por camada técnica):
 
 ```
-prisma/          # PrismaService + client extension de multi-tenancy
+prisma/          # schema.prisma + migrations (o código Nest fica em src/)
 src/
+  prisma/          # PrismaService + client extension de multi-tenancy + TenantContext
   auth/
   churches/        # perfil da igreja, cadastro, exclusão de conta
   members/

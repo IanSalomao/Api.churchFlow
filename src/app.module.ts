@@ -18,6 +18,8 @@ import { TenantContextMiddleware } from './prisma/tenant-context.middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(TenantContextMiddleware).forRoutes('{*splat}');
+    // Com o prefixo global, '{*splat}' vira '/v1/{*splat}' e NÃO casa a rota
+    // raiz '/v1' — por isso o '/' extra (vira '/v1' e cobre a raiz).
+    consumer.apply(TenantContextMiddleware).forRoutes('/', '{*splat}');
   }
 }
