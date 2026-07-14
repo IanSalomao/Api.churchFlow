@@ -1,14 +1,20 @@
+import { randomBytes } from 'node:crypto';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Prisma } from '../../generated/prisma/client';
 import { AppException } from '../common/exceptions/app.exception';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 const BCRYPT_ROUNDS = 10;
+// A spec fixa a expiração do link de recuperação em 1h.
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
@@ -16,6 +22,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -71,6 +78,70 @@ export class AuthService {
       );
     }
     return this.signToken(church.id, dto.rememberMe ?? false);
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    // Resposta idêntica exista ou não a conta — não vazar e-mails cadastrados.
+    const response = {
+      message:
+        'Se o e-mail informado existir, enviaremos um link de recuperação.',
+    };
+
+    const church = await this.prisma.unscoped.church.findFirst({
+      where: { email: dto.email, deletedAt: null },
+      select: { id: true, email: true },
+    });
+    if (!church) return response;
+
+    const token = randomBytes(32).toString('hex');
+    const now = new Date();
+    await this.prisma.unscoped.$transaction([
+      // Nunca há dois tokens válidos por igreja: invalida qualquer um ativo.
+      this.prisma.unscoped.passwordResetToken.updateMany({
+        where: { churchId: church.id, usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
+      }),
+      this.prisma.unscoped.passwordResetToken.create({
+        data: {
+          churchId: church.id,
+          token,
+          expiresAt: new Date(now.getTime() + RESET_TOKEN_TTL_MS),
+        },
+      }),
+    ]);
+
+    await this.mailService.sendPasswordReset(church.email, token);
+    return response;
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const resetToken = await this.prisma.unscoped.passwordResetToken.findUnique(
+      {
+        where: { token: dto.token },
+        select: { id: true, churchId: true, expiresAt: true, usedAt: true },
+      },
+    );
+    const now = new Date();
+    if (!resetToken || resetToken.usedAt || resetToken.expiresAt <= now) {
+      throw new AppException(
+        'INVALID_OR_EXPIRED_TOKEN',
+        'Este link de recuperação expirou ou já foi utilizado.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const password = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
+    await this.prisma.unscoped.$transaction([
+      this.prisma.unscoped.church.update({
+        where: { id: resetToken.churchId },
+        data: { password },
+      }),
+      this.prisma.unscoped.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { usedAt: now },
+      }),
+    ]);
+    return { message: 'Senha alterada com sucesso.' };
   }
 
   private async signToken(churchId: string, rememberMe: boolean) {
