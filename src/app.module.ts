@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { TenantContextMiddleware } from './prisma/tenant-context.middleware';
 import { MinistriesModule } from './ministries/ministries.module';
 import { AccountModule } from './account/account.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AccountModule } from './account/account.module';
     MembersModule,
     MinistriesModule,
     AccountModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
