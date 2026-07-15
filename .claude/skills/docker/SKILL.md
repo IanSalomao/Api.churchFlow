@@ -9,7 +9,7 @@ Execute all package installations and code execution inside Docker containers. T
 
 ## Contexto deste projeto
 
-Este repositório (`api.church-flow`) ainda **não tem** `docker-compose.yml` nem `Dockerfile.dev` — a criação do Compose local (Postgres + MinIO) é o item 1 do roadmap em `CLAUDE.md` e ainda não foi feita. Os blocos "Sample docker-compose.yml" / "Sample Dockerfile.dev" abaixo são o ponto de partida para quando esses arquivos forem criados. Até lá, os comandos `docker-compose --profile dev ...` vão falhar com `no configuration file provided` — nesse caso o passo que falta é criar a infra, não depurar o comando.
+Este repositório (`api.church-flow`) ainda **não tem** `docker-compose.yml` nem `Dockerfile.dev` — a criação do Compose local (Postgres + MinIO) é o item 1 do roadmap em `CLAUDE.md` e ainda não foi feita. Os blocos "Sample docker-compose.yml" / "Sample Dockerfile.dev" abaixo são o ponto de partida para quando esses arquivos forem criados. Até lá, os comandos `docker compose --profile  dev ...` vão falhar com `no configuration file provided` — nesse caso o passo que falta é criar a infra, não depurar o comando.
 
 ## Core Principle
 
@@ -39,7 +39,7 @@ church-flow-api-dev-1       Up X minutes    0.0.0.0:3000->3000/tcp
 cd /home/ian/Documentos/CHURCH_FLOW/api.church-flow
 
 # Start container
-docker-compose --profile dev up dev -d
+docker compose --profile  dev up dev -d
 
 # Verify it started
 docker ps --filter "name=church-flow-api"
@@ -51,8 +51,8 @@ docker ps --filter "name=church-flow-api"
 docker logs church-flow-api-dev-1 --tail 20
 
 # Remove and restart
-docker-compose --profile dev down
-docker-compose --profile dev up dev -d
+docker compose --profile  dev down
+docker compose --profile  dev up dev -d
 ```
 
 ## Quick Reference
@@ -74,16 +74,16 @@ curl -s http://localhost:3000 > /dev/null && echo "Server running" || echo "Serv
 
 ```bash
 # Start development container (from project root)
-docker-compose --profile dev up dev -d
+docker compose --profile  dev up dev -d
 
 # Stop container
-docker-compose --profile dev down
+docker compose --profile  dev down
 
 # Restart container
-docker-compose --profile dev restart dev
+docker compose --profile  dev restart dev
 
 # Rebuild after Dockerfile changes
-docker-compose --profile dev up dev -d --build
+docker compose --profile  dev up dev -d --build
 ```
 
 ### Execute Commands Inside Container
@@ -182,7 +182,7 @@ docker ps -a --filter "name=church-flow-api"
 docker logs church-flow-api-dev-1
 
 # Restart
-docker-compose --profile dev up dev -d
+docker compose --profile  dev up dev -d
 ```
 
 ### Port Already in Use
@@ -198,9 +198,9 @@ lsof -i :3000
 
 ```bash
 # Rebuild container with fresh dependencies
-docker-compose --profile dev down
-docker-compose --profile dev build --no-cache dev
-docker-compose --profile dev up dev -d
+docker compose --profile  dev down
+docker compose --profile  dev build --no-cache dev
+docker compose --profile  dev up dev -d
 ```
 
 ### File Changes Not Reflecting
@@ -210,7 +210,7 @@ docker-compose --profile dev up dev -d
 docker inspect church-flow-api-dev-1 | grep -A 10 "Mounts"
 
 # Restart container
-docker-compose --profile dev restart dev
+docker compose --profile  dev restart dev
 ```
 
 ## Project Configuration
