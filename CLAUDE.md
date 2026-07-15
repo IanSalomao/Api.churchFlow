@@ -12,7 +12,9 @@ Backend em NestJS do Church Flow, um sistema de gestão financeira para igrejas 
 > Este CLAUDE.md **não repete** aquele conteúdo — ele documenta apenas decisões de arquitetura/engenharia da API. Sempre que uma dúvida for sobre comportamento de tela, campo ou regra de negócio, a resposta está lá, não aqui.
 
 > [!note] Estado atual do código
-> O repositório ainda é o scaffold padrão gerado pelo Nest CLI (`nest new`) — só existe o boilerplate de exemplo (`AppController`/`AppService`/`AppModule` em `src/`). Nenhum módulo de feature, schema Prisma, Docker Compose ou demais itens do roadmap abaixo foi criado ainda. Tudo que este arquivo descreve sobre multi-tenancy, auth, módulos etc. é a arquitetura **alvo**, não o estado atual — use a seção Roadmap imediato para saber a ordem esperada de implementação.
+> Itens 1–3 do roadmap implementados: Docker Compose (Postgres + MinIO + serviço `dev`), schema Prisma com migration init, fundações da aplicação (config Zod, envelope global de resposta/erro, prefixo `/v1`, Swagger em `/docs`, PrismaModule com extension de multi-tenancy via AsyncLocalStorage) e o módulo `auth` completo (cadastro, login, guard global `APP_GUARD`, recuperação de senha) com testes unitários e e2e. Os CRUDs de feature (members, ministries, categories, transactions), dashboard, relatórios e churches ainda não existem.
+>
+> Ambiente de dev roda em containers: todo `npm`/`npx` deve ser executado dentro do serviço `dev` (`docker exec church-flow-api-dev-1 ...`) — o `node_modules` do host não é usado.
 
 ## Stack
 
@@ -68,16 +70,17 @@ Cada **igreja** é um tenant. É um schema único no Postgres — **não** há s
 - Tempo de expiração varia conforme o checkbox "Lembrar-me" do login: sessão curta sem marcar, 30 dias marcando. Os dois valores de expiração devem ser configuráveis via env var, não hardcoded.
 - Recuperação de senha: token de uso único, expiração curta (ex.: 1h), enviado por e-mail via Resend, conforme fluxo de 4 passos descrito no spec.
 
-> [!warning] Ponto em aberto — revogação imediata na exclusão de conta
-> O spec exige que a exclusão de conta desative o acesso **imediatamente**. Como a estratégia de auth é JWT stateless sem lista de revogação, um JWT emitido antes da exclusão continua tecnicamente válido até expirar (podendo ser até 30 dias, com "lembrar-me"). Antes de implementar o endpoint de exclusão de conta, decidir a mitigação — ex.: guard que confere `deletedAt`/status da igreja no banco a cada request autenticado, ou uma blocklist leve. Não assumir uma solução sem confirmar.
+> [!note] Resolvido — revogação imediata na exclusão de conta
+> O spec exige que a exclusão de conta desative o acesso **imediatamente**. Decisão implementada (2026-07-13): o `JwtAuthGuard` global confere no banco, a cada request autenticado, se a igreja segue ativa (`findFirst` por PK com `deletedAt: null`). Conta excluída → 401 na hora, mesmo com JWT criptograficamente válido por até 30 dias. Custo aceito: um SELECT por PK por request.
 
 ## Estrutura de módulos
 
 Módulos organizados por feature (não por camada técnica):
 
 ```
-prisma/          # PrismaService + client extension de multi-tenancy
+prisma/          # schema.prisma + migrations (o código Nest fica em src/)
 src/
+  prisma/          # PrismaService + client extension de multi-tenancy + TenantContext
   auth/
   churches/        # perfil da igreja, cadastro, exclusão de conta
   members/
@@ -142,9 +145,9 @@ Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`, 
 
 ## Roadmap imediato
 
-1. Docker Compose com Postgres local (+ MinIO para storage de relatórios)
-2. Inicializar Prisma, definir schema e primeira migration
-3. Módulo `auth` (cadastro, login, recuperação de senha)
+1. ~~Docker Compose com Postgres local (+ MinIO para storage de relatórios)~~ ✅
+2. ~~Inicializar Prisma, definir schema e primeira migration~~ ✅
+3. ~~Módulo `auth` (cadastro, login, recuperação de senha)~~ ✅
 4. CRUDs de `members`, `ministries`, `categories`, `transactions`
 5. Agregações de `dashboard`/Início (cards, gráficos)
 6. Geração de relatórios em PDF + storage
