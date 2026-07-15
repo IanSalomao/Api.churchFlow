@@ -10,6 +10,7 @@ import { TenantContextMiddleware } from './prisma/tenant-context.middleware';
 import { MinistriesModule } from './ministries/ministries.module';
 import { AccountModule } from './account/account.module';
 import { CategoriesModule } from './categories/categories.module';
+import { TransactionsModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CategoriesModule } from './categories/categories.module';
     MinistriesModule,
     AccountModule,
     CategoriesModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
