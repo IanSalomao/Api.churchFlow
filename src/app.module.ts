@@ -8,6 +8,7 @@ import { MembersModule } from './members/members.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TenantContextMiddleware } from './prisma/tenant-context.middleware';
 import { MinistriesModule } from './ministries/ministries.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { MinistriesModule } from './ministries/ministries.module';
     AuthModule,
     MembersModule,
     MinistriesModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
