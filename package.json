@@ -17,7 +17,10 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "generate:openapi": "nest build && node dist/src/scripts/generate-openapi.js",
+    "generate:types": "openapi-typescript openapi/openapi.json -o openapi/api-types.d.ts",
+    "generate:api-types": "npm run generate:openapi && npm run generate:types"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -53,6 +56,7 @@
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^17.0.0",
     "jest": "^30.0.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.4.2",
     "prisma": "^7.8.0",
     "source-map-support": "^0.5.21",
