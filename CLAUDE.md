@@ -75,21 +75,23 @@ Cada **igreja** é um tenant. É um schema único no Postgres — **não** há s
 
 ## Estrutura de módulos
 
-Módulos organizados por feature (não por camada técnica):
+O critério de organização não é "feature vs infra", e sim "é um módulo Nest (`@Module`) ou não é". Todo módulo — de domínio ou de infraestrutura — vive em `src/modules/`; o que não é módulo (guards/decorators/filters/pipes compartilhados, validação de env) fica em `src/common/` e `src/config/`, fora de `modules/`:
 
 ```
-prisma/          # schema.prisma + migrations (o código Nest fica em src/)
+prisma/            # schema.prisma + migrations (o código Nest fica em src/)
 src/
-  prisma/          # PrismaService + client extension de multi-tenancy + TenantContext
-  auth/
-  churches/        # perfil da igreja, cadastro, exclusão de conta
-  members/
-  ministries/
-  categories/
-  transactions/
-  reports/
-  dashboard/       # agregações de Início e Dashboard
-  common/          # guards, decorators, filters, pipes compartilhados
+  common/            # sem @Module — guards, decorators, filters, pipes compartilhados
+  config/            # sem @Module — validação de env (Zod)
+  modules/
+    prisma/            # PrismaService + client extension de multi-tenancy + TenantContext
+    mail/              # MailService (Resend)
+    auth/
+    account/           # perfil da igreja, alteração de senha, exclusão de conta
+    members/
+    ministries/
+    categories/
+    transactions/
+    dashboard/         # agregações de Início e Dashboard
 ```
 
 Cada módulo de feature segue o padrão Nest: `*.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`.

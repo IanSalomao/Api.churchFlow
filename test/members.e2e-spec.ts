@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
-import { PrismaService } from '../src/prisma/prisma.service';
+import { PrismaService } from '../src/modules/prisma/prisma.service';
 
 const EMAIL = 'e2e-members@teste.local';
 const OTHER_EMAIL = 'e2e-members-outra-igreja@teste.local';
@@ -119,9 +119,9 @@ describe('Members (e2e)', () => {
       expect(new Date(response.body.data.birthDate).toISOString()).toContain(
         '1990-05-20',
       );
-      expect(
-        new Date(response.body.data.baptismDate).toISOString(),
-      ).toContain('2010-12-01');
+      expect(new Date(response.body.data.baptismDate).toISOString()).toContain(
+        '2010-12-01',
+      );
     });
 
     it('birthDate posterior a baptismDate → 400 VALIDATION_ERROR', async () => {

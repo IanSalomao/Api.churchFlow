@@ -3,8 +3,8 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
-import { MailService } from '../src/mail/mail.service';
-import { PrismaService } from '../src/prisma/prisma.service';
+import { MailService } from '../src/modules/mail/mail.service';
+import { PrismaService } from '../src/modules/prisma/prisma.service';
 
 const EMAIL = 'e2e-auth@teste.local';
 const PASSWORD = 'senhaSegura123';
