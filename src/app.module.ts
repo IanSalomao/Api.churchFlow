@@ -11,6 +11,7 @@ import { MinistriesModule } from './ministries/ministries.module';
 import { AccountModule } from './account/account.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     AccountModule,
     CategoriesModule,
     TransactionsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
