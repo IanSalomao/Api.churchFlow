@@ -26,9 +26,9 @@ export class MailService {
       const { error } = await this.resend.emails.send({
         from: this.from,
         to,
-        subject: 'Recuperação de senha — Church Flow',
+        subject: 'Recuperação de senha — Miyrah',
         html: [
-          '<p>Recebemos um pedido para redefinir a senha da sua conta no Church Flow.</p>',
+          '<p>Recebemos um pedido para redefinir a senha da sua conta no Miyrah.</p>',
           `<p><a href="${link}">Clique aqui para definir uma nova senha</a>.</p>`,
           '<p>O link expira em 1 hora e só pode ser usado uma vez. Se você não pediu a redefinição, ignore este e-mail.</p>',
         ].join('\n'),

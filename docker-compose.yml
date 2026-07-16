@@ -1,18 +1,22 @@
-name: church-flow-api
+name: miyrah-api
 
 services:
   postgres:
     image: postgres:17-alpine
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-churchflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-churchflow}
-      POSTGRES_DB: ${POSTGRES_DB:-churchflow}
+      POSTGRES_USER: ${POSTGRES_USER:-miyrah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-miyrah}
+      POSTGRES_DB: ${POSTGRES_DB:-miyrah}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-churchflow} -d ${POSTGRES_DB:-churchflow}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-miyrah} -d ${POSTGRES_DB:-miyrah}',
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -22,15 +26,15 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000" # API S3
-      - "9001:9001" # Console web
+      - '9000:9000' # API S3
+      - '9001:9001' # Console web
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-churchflow}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-churchflow-secret}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-miyrah}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-miyrah-secret}
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ['CMD', 'mc', 'ready', 'local']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -48,17 +52,17 @@ services:
       mc mb --ignore-existing local/$${S3_BUCKET}
       "
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-churchflow}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-churchflow-secret}
-      S3_BUCKET: ${S3_BUCKET:-church-flow-reports}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-miyrah}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-miyrah-secret}
+      S3_BUCKET: ${S3_BUCKET:-miyrah-reports}
 
   dev:
     build:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - "3000:3000"
-      - "5555:5555" # Prisma Studio
+      - '3000:3000'
+      - '5555:5555' # Prisma Studio
     volumes:
       - .:/app
       - /app/node_modules

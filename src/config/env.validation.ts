@@ -13,7 +13,7 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   FRONTEND_URL: z.url().default('http://localhost:5173'),
   // Default é o sender de sandbox do Resend, que funciona sem domínio verificado.
-  MAIL_FROM: z.string().min(1).default('Church Flow <onboarding@resend.dev>'),
+  MAIL_FROM: z.string().min(1).default('Miyrah <onboarding@resend.dev>'),
 });
 
 export type Env = z.infer<typeof envSchema>;

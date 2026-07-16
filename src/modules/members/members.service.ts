@@ -28,7 +28,7 @@ export class MembersService {
     ]);
 
     return {
-      data,
+      items: data,
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }

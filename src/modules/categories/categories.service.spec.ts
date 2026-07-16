@@ -86,7 +86,7 @@ describe('CategoriesService', () => {
       );
     });
 
-    it('retorna data + meta com totalPages calculado', async () => {
+    it('retorna items + meta com totalPages calculado', async () => {
       const categories = [{ id: '1' }, { id: '2' }];
       prisma.tenant.category.findMany.mockResolvedValue(categories);
       prisma.tenant.category.count.mockResolvedValue(45);
@@ -94,7 +94,7 @@ describe('CategoriesService', () => {
       const result = await service.findAll({ page: 1, limit: 20 });
 
       expect(result).toEqual({
-        data: categories,
+        items: categories,
         meta: { page: 1, limit: 20, total: 45, totalPages: 3 },
       });
     });

@@ -7,7 +7,7 @@ import { DocumentBuilder } from '@nestjs/swagger';
  */
 export function buildSwaggerConfig() {
   return new DocumentBuilder()
-    .setTitle('Church Flow API')
+    .setTitle('Miyrah API')
     .setDescription('API de gestão financeira para igrejas')
     .setVersion('1.0')
     .addBearerAuth()

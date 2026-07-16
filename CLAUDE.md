@@ -1,37 +1,37 @@
 # CLAUDE.md
 
-Este arquivo orienta o Claude Code ao trabalhar neste repositório — a **API do Church Flow (ChF)**.
+Este arquivo orienta o Claude Code ao trabalhar neste repositório — a **API Miyrah**.
 
 ## Natureza deste repositório
 
-Backend em NestJS do Church Flow, um sistema de gestão financeira para igrejas (controle de entradas/saídas, membros, ministérios, categorias e relatórios). Este repo cuida só da API; não há front-end aqui.
+Backend em NestJS do sistema Miyrah, um sistema de gestão financeira para igrejas (controle de entradas/saídas, membros, ministérios, categorias e relatórios). Este repo cuida só da API; não há front-end aqui.
 
 > [!important] Fonte da verdade do produto
 > A especificação funcional completa (requisitos, telas, regras de negócio, campos de formulário) vive em
-> `/home/ian/Documentos/I'AM/PESSOAL/CHURCH_FLOW/Church_Flow.md`.
+> `/home/ian/Documentos/I'AM/PESSOAL/MIYRAH/Miyrah.md`.
 > Este CLAUDE.md **não repete** aquele conteúdo — ele documenta apenas decisões de arquitetura/engenharia da API. Sempre que uma dúvida for sobre comportamento de tela, campo ou regra de negócio, a resposta está lá, não aqui.
 
 > [!note] Estado atual do código
 > Itens 1–3 do roadmap implementados: Docker Compose (Postgres + MinIO + serviço `dev`), schema Prisma com migration init, fundações da aplicação (config Zod, envelope global de resposta/erro, prefixo `/v1`, Swagger em `/docs`, PrismaModule com extension de multi-tenancy via AsyncLocalStorage) e o módulo `auth` completo (cadastro, login, guard global `APP_GUARD`, recuperação de senha) com testes unitários e e2e. Os CRUDs de feature (members, ministries, categories, transactions), dashboard, relatórios e churches ainda não existem.
 >
-> Ambiente de dev roda em containers: todo `npm`/`npx` deve ser executado dentro do serviço `dev` (`docker exec church-flow-api-dev-1 ...`) — o `node_modules` do host não é usado.
+> Ambiente de dev roda em containers: todo `npm`/`npx` deve ser executado dentro do serviço `dev` (`docker exec miyrah-api-dev-1 ...`) — o `node_modules` do host não é usado.
 
 ## Stack
 
-| Camada         | Tecnologia                                                   |
+| Camada         | Tecnologia                                                    |
 | -------------- | ------------------------------------------------------------- |
-| Linguagem      | TypeScript                                                     |
-| Framework      | NestJS                                                         |
-| Banco de dados | PostgreSQL                                                     |
+| Linguagem      | TypeScript                                                    |
+| Framework      | NestJS                                                        |
+| Banco de dados | PostgreSQL                                                    |
 | ORM            | Prisma (Client + Migrate)                                     |
 | Autenticação   | JWT (stateless, expiração variável — ver seção Autenticação)  |
 | Validação      | class-validator + class-transformer (DTOs)                    |
 | Env config     | `@nestjs/config` + validação de schema com Zod                |
-| Docs de API    | `@nestjs/swagger`                                              |
-| E-mail         | Resend (recuperação de senha)                                  |
-| Geração de PDF | Puppeteer (relatórios)                                         |
+| Docs de API    | `@nestjs/swagger`                                             |
+| E-mail         | Resend (recuperação de senha)                                 |
+| Geração de PDF | Puppeteer (relatórios)                                        |
 | Storage        | Object storage S3-compatible (MinIO local / S3 ou R2 em prod) |
-| Testes         | Jest (unit) + Supertest (e2e)                                  |
+| Testes         | Jest (unit) + Supertest (e2e)                                 |
 
 ## Comandos
 

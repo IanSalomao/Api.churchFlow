@@ -49,7 +49,7 @@ export class TransactionsService {
     ]);
 
     return {
-      data: data.map((transaction) => this.mapTransaction(transaction)),
+      items: data.map((transaction) => this.mapTransaction(transaction)),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }

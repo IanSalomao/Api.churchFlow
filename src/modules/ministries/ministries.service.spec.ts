@@ -85,7 +85,7 @@ describe('MinistriesService', () => {
       );
     });
 
-    it('retorna data + meta com totalPages calculado', async () => {
+    it('retorna items + meta com totalPages calculado', async () => {
       const ministries = [{ id: '1' }, { id: '2' }];
       prisma.tenant.ministry.findMany.mockResolvedValue(ministries);
       prisma.tenant.ministry.count.mockResolvedValue(45);
@@ -93,7 +93,7 @@ describe('MinistriesService', () => {
       const result = await service.findAll({ page: 1, limit: 20 });
 
       expect(result).toEqual({
-        data: ministries,
+        items: ministries,
         meta: { page: 1, limit: 20, total: 45, totalPages: 3 },
       });
     });

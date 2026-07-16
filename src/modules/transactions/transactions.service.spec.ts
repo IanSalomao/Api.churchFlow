@@ -183,7 +183,7 @@ describe('TransactionsService', () => {
         total: 45,
         totalPages: 3,
       });
-      expect(result.data[0]).toEqual({
+      expect(result.items[0]).toEqual({
         id: TRANSACTION_ID,
         churchId: 'igreja-1',
         type: 'income',
@@ -202,7 +202,7 @@ describe('TransactionsService', () => {
         member: null,
         ministry: null,
       });
-      expect(result.data[1].member).toEqual({
+      expect(result.items[1].member).toEqual({
         id: MEMBER_ID,
         name: 'João da Silva',
         deleted: false,
@@ -221,8 +221,8 @@ describe('TransactionsService', () => {
 
       const result = await service.findAll({ page: 1, limit: 20 });
 
-      expect(result.data[0].category).toMatchObject({ deleted: true });
-      expect(result.data[0].member).toMatchObject({ deleted: true });
+      expect(result.items[0].category).toMatchObject({ deleted: true });
+      expect(result.items[0].member).toMatchObject({ deleted: true });
     });
   });
 

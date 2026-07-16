@@ -28,7 +28,7 @@ export class CategoriesService {
     ]);
 
     return {
-      data,
+      items: data,
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
