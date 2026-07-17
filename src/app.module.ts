@@ -1,7 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { validateEnv } from './config/env.validation';
 import { MembersModule } from './modules/members/members.module';
@@ -25,8 +23,6 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     TransactionsModule,
     DashboardModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
