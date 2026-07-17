@@ -162,24 +162,25 @@ describe('Auth (e2e)', () => {
   describe('rota protegida (guard global)', () => {
     it('sem token → 401', async () => {
       const response = await request(app.getHttpServer())
-        .get('/v1')
+        .get('/v1/account')
         .expect(401);
       expect(response.body.error.code).toBe('UNAUTHORIZED');
     });
 
     it('token inválido → 401', async () => {
       await request(app.getHttpServer())
-        .get('/v1')
+        .get('/v1/account')
         .set('Authorization', 'Bearer token-invalido')
         .expect(401);
     });
 
     it('token válido → 200 com envelope', async () => {
       const response = await request(app.getHttpServer())
-        .get('/v1')
+        .get('/v1/account')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
-      expect(response.body).toEqual({ success: true, data: 'Hello World!' });
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.email).toBe(EMAIL);
     });
   });
 
