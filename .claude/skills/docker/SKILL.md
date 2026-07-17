@@ -9,7 +9,10 @@ Execute all package installations and code execution inside Docker containers. T
 
 ## Contexto deste projeto
 
-Este repositório (`api.church-flow`) ainda **não tem** `docker-compose.yml` nem `Dockerfile.dev` — a criação do Compose local (Postgres + MinIO) é o item 1 do roadmap em `CLAUDE.md` e ainda não foi feita. Os blocos "Sample docker-compose.yml" / "Sample Dockerfile.dev" abaixo são o ponto de partida para quando esses arquivos forem criados. Até lá, os comandos `docker compose --profile  dev ...` vão falhar com `no configuration file provided` — nesse caso o passo que falta é criar a infra, não depurar o comando.
+Este repositório (`api.miyrah`, projeto Compose `miyrah-api`) já tem `docker-compose.yml` e `Dockerfile.dev` na raiz, com os serviços `postgres`, `minio`, `minio-init` e `dev` (perfil `dev`). Os blocos "Sample docker-compose.yml" / "Sample Dockerfile.dev" no final deste arquivo são só referência histórica do formato inicial — não precisam ser recriados.
+
+> [!warning] Nome do projeto Compose é derivado do diretório
+> O `docker-compose.yml` tem `name: miyrah-api` explícito. Se o diretório do projeto for renomeado de novo (ou esse `name:` mudar) sem migrar os dados, o Compose cria containers e volumes **novos e vazios** com o novo prefixo, deixando os antigos órfãos (parados, não removidos). Sintoma: API volta a dar erro de "table does not exist" mesmo com o container rodando — rode `npx prisma migrate deploy` no container novo antes de mais nada.
 
 ## Core Principle
 
@@ -24,31 +27,31 @@ Instead, use `docker exec` or ensure the container is running the dev server.
 Run this check first:
 
 ```bash
-docker ps --filter "name=church-flow-api" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+docker ps --filter "name=miyrah-api" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 ```
 
 **Expected output:**
 ```
 NAMES                       STATUS          PORTS
-church-flow-api-dev-1       Up X minutes    0.0.0.0:3000->3000/tcp
+miyrah-api-dev-1       Up X minutes    0.0.0.0:3000->3000/tcp
 ```
 
 **If container is NOT running:**
 ```bash
 # Navigate to project root first
-cd /home/ian/Documentos/CHURCH_FLOW/api.church-flow
+cd /home/ian/Documentos/MIYRAH/api.miyrah
 
 # Start container
 docker compose --profile  dev up dev -d
 
 # Verify it started
-docker ps --filter "name=church-flow-api"
+docker ps --filter "name=miyrah-api"
 ```
 
 **If container shows "Exited":**
 ```bash
 # Check why it exited
-docker logs church-flow-api-dev-1 --tail 20
+docker logs miyrah-api-dev-1 --tail 20
 
 # Remove and restart
 docker compose --profile  dev down
@@ -61,10 +64,10 @@ docker compose --profile  dev up dev -d
 
 ```bash
 # List running containers for current project
-docker ps --filter "name=church-flow-api"
+docker ps --filter "name=miyrah-api"
 
 # Check container logs
-docker logs church-flow-api-dev-1 --tail 50
+docker logs miyrah-api-dev-1 --tail 50
 
 # Check if dev server is responding
 curl -s http://localhost:3000 > /dev/null && echo "Server running" || echo "Server not running"
@@ -90,31 +93,31 @@ docker compose --profile  dev up dev -d --build
 
 ```bash
 # Install a package
-docker exec -it church-flow-api-dev-1 npm install <package-name>
+docker exec -it miyrah-api-dev-1 npm install <package-name>
 
 # Install dev dependency
-docker exec -it church-flow-api-dev-1 npm install -D <package-name>
+docker exec -it miyrah-api-dev-1 npm install -D <package-name>
 
 # Run unit tests
-docker exec -it church-flow-api-dev-1 npm test
+docker exec -it miyrah-api-dev-1 npm test
 
 # Run e2e tests
-docker exec -it church-flow-api-dev-1 npm run test:e2e
+docker exec -it miyrah-api-dev-1 npm run test:e2e
 
 # Type-check without emitting (no dedicated "typecheck" script in this project)
-docker exec -it church-flow-api-dev-1 npx tsc --noEmit -p tsconfig.build.json
+docker exec -it miyrah-api-dev-1 npx tsc --noEmit -p tsconfig.build.json
 
 # Run linting
-docker exec -it church-flow-api-dev-1 npm run lint
+docker exec -it miyrah-api-dev-1 npm run lint
 
 # Run build
-docker exec -it church-flow-api-dev-1 npm run build
+docker exec -it miyrah-api-dev-1 npm run build
 
 # Open shell inside container
-docker exec -it church-flow-api-dev-1 /bin/sh
+docker exec -it miyrah-api-dev-1 /bin/sh
 
 # Run any arbitrary command
-docker exec -it church-flow-api-dev-1 <command>
+docker exec -it miyrah-api-dev-1 <command>
 ```
 
 ## When to Use Docker exec
@@ -136,7 +139,7 @@ docker exec -it church-flow-api-dev-1 <command>
 │  HOST (macOS/Linux/Windows)                                 │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │  Docker Container (church-flow-api-dev-1)            │   │
+│  │  Docker Container (miyrah-api-dev-1)            │   │
 │  │                                                     │   │
 │  │  Node 24 Alpine                                     │   │
 │  │  └── node_modules/ (container-only)                 │   │
@@ -176,10 +179,10 @@ volumes:
 
 ```bash
 # Check if container exists
-docker ps -a --filter "name=church-flow-api"
+docker ps -a --filter "name=miyrah-api"
 
 # If exited, check why
-docker logs church-flow-api-dev-1
+docker logs miyrah-api-dev-1
 
 # Restart
 docker compose --profile  dev up dev -d
@@ -207,7 +210,7 @@ docker compose --profile  dev up dev -d
 
 ```bash
 # Check volume mounts
-docker inspect church-flow-api-dev-1 | grep -A 10 "Mounts"
+docker inspect miyrah-api-dev-1 | grep -A 10 "Mounts"
 
 # Restart container
 docker compose --profile  dev restart dev
@@ -217,10 +220,12 @@ docker compose --profile  dev restart dev
 
 | Setting | Value |
 |---------|---------------|
-| Container name | `church-flow-api-dev-1` |
+| Container name | `miyrah-api-dev-1` |
 | Port | `3000` (fallback em `src/main.ts`; configurável via env `PORT`) |
+| Port extra | `5555` (Prisma Studio) |
 | Node version | `24` (Alpine) — conforme `@types/node` no `package.json` |
 | Dev command | `npm run start:dev` |
+| Outros serviços | `miyrah-api-postgres-1`, `miyrah-api-minio-1` |
 
 ### Environment Variables
 
@@ -228,7 +233,7 @@ Required env vars are loaded from `.env` file via docker-compose (ver lista comp
 
 If a command needs a specific env var:
 ```bash
-docker exec -it -e MY_VAR=value church-flow-api-dev-1 <command>
+docker exec -it -e MY_VAR=value miyrah-api-dev-1 <command>
 ```
 
 ## Best Practices
@@ -245,18 +250,18 @@ When Claude Code needs to:
 
 | Task | Action |
 |------|--------|
-| Install dependency | `docker exec -it church-flow-api-dev-1 npm install <pkg>` |
-| Run unit tests | `docker exec -it church-flow-api-dev-1 npm test` |
-| Run e2e tests | `docker exec -it church-flow-api-dev-1 npm run test:e2e` |
-| Check types | `docker exec -it church-flow-api-dev-1 npx tsc --noEmit -p tsconfig.build.json` |
-| Build project | `docker exec -it church-flow-api-dev-1 npm run build` |
+| Install dependency | `docker exec -it miyrah-api-dev-1 npm install <pkg>` |
+| Run unit tests | `docker exec -it miyrah-api-dev-1 npm test` |
+| Run e2e tests | `docker exec -it miyrah-api-dev-1 npm run test:e2e` |
+| Check types | `docker exec -it miyrah-api-dev-1 npx tsc --noEmit -p tsconfig.build.json` |
+| Build project | `docker exec -it miyrah-api-dev-1 npm run build` |
 | Start dev server | Container already runs it via docker-compose (`start:dev`) |
 | Edit files | Edit directly (volume mount syncs) |
 | Git operations | Run on host (not in container) |
 
-## Sample docker-compose.yml
+## Sample docker-compose.yml (referência histórica)
 
-Ponto de partida para o item 1 do roadmap (ainda falta adicionar os serviços `postgres` e `minio` quando essa etapa for feita):
+Formato inicial usado antes de os serviços `postgres`/`minio` serem adicionados. O `docker-compose.yml` real na raiz do repo já é mais completo que isto — não usar este bloco como fonte da verdade:
 
 ```yaml
 services:
