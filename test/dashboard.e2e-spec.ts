@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
+import { DEFAULT_MINISTRIES } from '../src/modules/ministries/constants/default-ministries.constant';
 import { PrismaService } from '../src/modules/prisma/prisma.service';
 
 const EMAIL = 'e2e-dashboard@teste.local';
@@ -251,7 +252,11 @@ describe('Dashboard (e2e)', () => {
     it('membersCount e ministriesCount refletem a igreja autenticada', async () => {
       const response = await authed.get('/v1/dashboard/summary').expect(200);
 
-      expect(response.body.data.ministriesCount).toBe(1);
+      // +1: o "Ministério E2E" criado manualmente no beforeAll, além dos
+      // ministérios padrão que o registro já cria para toda igreja nova.
+      expect(response.body.data.ministriesCount).toBe(
+        DEFAULT_MINISTRIES.length + 1,
+      );
     });
 
     it('period=custom sem dateFrom/dateTo → 400 VALIDATION_ERROR', async () => {

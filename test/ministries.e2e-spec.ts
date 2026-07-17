@@ -24,6 +24,11 @@ describe('Ministries (e2e)', () => {
     await prisma.unscoped.member.deleteMany({
       where: { church: { email: { in: [EMAIL, OTHER_EMAIL] } } },
     });
+    // category também tem FK para church sem cascade — o registro cria as
+    // categorias padrão automaticamente, então precisam sair antes da igreja.
+    await prisma.unscoped.category.deleteMany({
+      where: { church: { email: { in: [EMAIL, OTHER_EMAIL] } } },
+    });
     await prisma.unscoped.church.deleteMany({
       where: { email: { in: [EMAIL, OTHER_EMAIL] } },
     });

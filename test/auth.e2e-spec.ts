@@ -3,7 +3,9 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
+import { DEFAULT_CATEGORIES } from '../src/modules/categories/constants/default-categories.constant';
 import { MailService } from '../src/modules/mail/mail.service';
+import { DEFAULT_MINISTRIES } from '../src/modules/ministries/constants/default-ministries.constant';
 import { PrismaService } from '../src/modules/prisma/prisma.service';
 
 const EMAIL = 'e2e-auth@teste.local';
@@ -25,6 +27,13 @@ describe('Auth (e2e)', () => {
 
   const cleanup = async () => {
     await prisma.unscoped.passwordResetToken.deleteMany({
+      where: { church: { email: EMAIL } },
+    });
+    // category/ministry têm FK para church sem cascade — precisam sair antes.
+    await prisma.unscoped.category.deleteMany({
+      where: { church: { email: EMAIL } },
+    });
+    await prisma.unscoped.ministry.deleteMany({
       where: { church: { email: EMAIL } },
     });
     await prisma.unscoped.church.deleteMany({ where: { email: EMAIL } });
@@ -65,6 +74,16 @@ describe('Auth (e2e)', () => {
         email: EMAIL,
       });
       expect(response.body.data.church.password).toBeUndefined();
+
+      const churchId = response.body.data.church.id;
+      const categories = await prisma.unscoped.category.findMany({
+        where: { churchId },
+      });
+      const ministries = await prisma.unscoped.ministry.findMany({
+        where: { churchId },
+      });
+      expect(categories).toHaveLength(DEFAULT_CATEGORIES.length);
+      expect(ministries).toHaveLength(DEFAULT_MINISTRIES.length);
     });
 
     it('e-mail duplicado → 409 EMAIL_ALREADY_IN_USE', async () => {

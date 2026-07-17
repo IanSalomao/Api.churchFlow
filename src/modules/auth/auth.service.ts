@@ -5,7 +5,9 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Prisma } from '../../../generated/prisma/client';
 import { AppException } from '../../common/exceptions/app.exception';
+import { DEFAULT_CATEGORIES } from '../categories/constants/default-categories.constant';
 import { MailService } from '../mail/mail.service';
+import { DEFAULT_MINISTRIES } from '../ministries/constants/default-ministries.constant';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
@@ -28,20 +30,37 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const password = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     try {
-      const church = await this.prisma.unscoped.church.create({
-        data: {
-          name: dto.name,
-          email: dto.email,
-          phone: dto.phone,
-          password,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          createdAt: true,
-        },
+      // Categorias e ministérios padrão nascem com a igreja, na mesma
+      // transação: se a criação deles falhar, a igreja também não é criada.
+      const church = await this.prisma.unscoped.$transaction(async (tx) => {
+        const church = await tx.church.create({
+          data: {
+            name: dto.name,
+            email: dto.email,
+            phone: dto.phone,
+            password,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            createdAt: true,
+          },
+        });
+        await tx.category.createMany({
+          data: DEFAULT_CATEGORIES.map((category) => ({
+            ...category,
+            churchId: church.id,
+          })),
+        });
+        await tx.ministry.createMany({
+          data: DEFAULT_MINISTRIES.map((ministry) => ({
+            ...ministry,
+            churchId: church.id,
+          })),
+        });
+        return church;
       });
       const { token } = await this.signToken(church.id, false);
       return { token, church };

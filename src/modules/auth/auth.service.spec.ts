@@ -4,7 +4,9 @@ import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { Prisma } from '../../../generated/prisma/client';
 import { AppException } from '../../common/exceptions/app.exception';
+import { DEFAULT_CATEGORIES } from '../categories/constants/default-categories.constant';
 import { MailService } from '../mail/mail.service';
+import { DEFAULT_MINISTRIES } from '../ministries/constants/default-ministries.constant';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
 
@@ -17,6 +19,8 @@ describe('AuthService', () => {
   let prisma: {
     unscoped: {
       church: { create: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
+      category: { createMany: jest.Mock };
+      ministry: { createMany: jest.Mock };
       passwordResetToken: {
         findUnique: jest.Mock;
         updateMany: jest.Mock;
@@ -31,22 +35,28 @@ describe('AuthService', () => {
   let mailService: { sendPasswordReset: jest.Mock };
 
   beforeEach(async () => {
-    prisma = {
-      unscoped: {
-        church: {
-          create: jest.fn(),
-          findFirst: jest.fn(),
-          update: jest.fn(),
-        },
-        passwordResetToken: {
-          findUnique: jest.fn(),
-          updateMany: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-        },
-        $transaction: jest.fn().mockResolvedValue([]),
+    const unscoped = {
+      church: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
       },
+      category: { createMany: jest.fn() },
+      ministry: { createMany: jest.fn() },
+      passwordResetToken: {
+        findUnique: jest.fn(),
+        updateMany: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+      },
+      $transaction: jest.fn(),
     };
+    // register() usa a forma de callback (precisa do id da igreja recém-criada
+    // para os defaults); forgotPassword/resetPassword usam a forma de array.
+    unscoped.$transaction.mockImplementation((arg: unknown) =>
+      typeof arg === 'function' ? arg(unscoped) : Promise.resolve([]),
+    );
+    prisma = { unscoped };
     jwtService = {
       signAsync: jest.fn().mockResolvedValue('jwt-token'),
       decode: jest.fn().mockReturnValue({ exp: FAKE_EXP }),
@@ -120,6 +130,33 @@ describe('AuthService', () => {
         new Error('conexão caiu'),
       );
       await expect(service.register(dto)).rejects.toThrow('conexão caiu');
+    });
+
+    it('cria categorias e ministérios padrão na mesma transação da igreja', async () => {
+      prisma.unscoped.church.create.mockResolvedValue({ id: CHURCH_ID });
+      await service.register(dto);
+
+      expect(prisma.unscoped.$transaction).toHaveBeenCalledTimes(1);
+
+      const categoriesData =
+        prisma.unscoped.category.createMany.mock.calls[0][0].data;
+      expect(categoriesData).toHaveLength(DEFAULT_CATEGORIES.length);
+      expect(categoriesData).toEqual(
+        DEFAULT_CATEGORIES.map((category) => ({
+          ...category,
+          churchId: CHURCH_ID,
+        })),
+      );
+
+      const ministriesData =
+        prisma.unscoped.ministry.createMany.mock.calls[0][0].data;
+      expect(ministriesData).toHaveLength(DEFAULT_MINISTRIES.length);
+      expect(ministriesData).toEqual(
+        DEFAULT_MINISTRIES.map((ministry) => ({
+          ...ministry,
+          churchId: CHURCH_ID,
+        })),
+      );
     });
   });
 
