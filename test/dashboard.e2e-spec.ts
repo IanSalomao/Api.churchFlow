@@ -342,5 +342,110 @@ describe('Dashboard (e2e)', () => {
         .get('/v1/dashboard/charts')
         .expect(401);
     });
+
+    it('preenche com zero os dias do período sem transação (percepção de linha do tempo)', async () => {
+      const response = await authed
+        .get(
+          '/v1/dashboard/charts?period=custom&dateFrom=2026-01-04&dateTo=2026-01-07',
+        )
+        .expect(200);
+
+      expect(response.body.data.line).toEqual([
+        { date: '2026-01-04', income: 0, expense: 0 },
+        { date: '2026-01-05', income: 500, expense: 0 },
+        { date: '2026-01-06', income: 0, expense: 0 },
+        { date: '2026-01-07', income: 0, expense: 0 },
+      ]);
+    });
+  });
+
+  describe('GET /v1/dashboard/comparison', () => {
+    it('sem token → 401', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/dashboard/comparison')
+        .expect(401);
+    });
+
+    it('agrupa por mês (padrão) com buckets contínuos e comparison vs. a média dos anteriores', async () => {
+      const response = await authed
+        .get(
+          '/v1/dashboard/comparison?period=custom&dateFrom=2026-01-01&dateTo=2026-03-31',
+        )
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.groupBy).toBe('month');
+      expect(response.body.data.buckets).toEqual([
+        {
+          periodStart: '2026-01-01',
+          label: 'Jan/26',
+          income: 500,
+          expense: 1200,
+        },
+        { periodStart: '2026-02-01', label: 'Fev/26', income: 300, expense: 0 },
+        { periodStart: '2026-03-01', label: 'Mar/26', income: 0, expense: 200 },
+      ]);
+      expect(response.body.data.comparison).toEqual({
+        sampleSize: 2,
+        incomeVsAvg: -100.0,
+        expenseVsAvg: -66.7,
+      });
+    });
+
+    it('filtra por ministryId e oculta transações sem ministério vinculado', async () => {
+      const response = await authed
+        .get(
+          `/v1/dashboard/comparison?period=custom&dateFrom=2026-01-01&dateTo=2026-01-31&ministryId=${ministryId}`,
+        )
+        .expect(200);
+
+      expect(response.body.data.buckets).toEqual([
+        {
+          periodStart: '2026-01-01',
+          label: 'Jan/26',
+          income: 500,
+          expense: 1200,
+        },
+      ]);
+      expect(response.body.data.comparison).toEqual({
+        sampleSize: 0,
+        incomeVsAvg: null,
+        expenseVsAvg: null,
+      });
+    });
+
+    it('groupBy inválido → 400 VALIDATION_ERROR', async () => {
+      const response = await authed
+        .get('/v1/dashboard/comparison?groupBy=daily')
+        .expect(400);
+
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('period=custom sem dateFrom/dateTo → 400 VALIDATION_ERROR', async () => {
+      const response = await authed
+        .get('/v1/dashboard/comparison?period=custom')
+        .expect(400);
+
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('outra igreja não vê os dados desta igreja', async () => {
+      const response = await request(app.getHttpServer())
+        .get(
+          '/v1/dashboard/comparison?period=custom&dateFrom=2026-01-01&dateTo=2026-01-31',
+        )
+        .set('Authorization', `Bearer ${otherAuthToken}`)
+        .expect(200);
+
+      expect(response.body.data.buckets).toEqual([
+        {
+          periodStart: '2026-01-01',
+          label: 'Jan/26',
+          income: 99999,
+          expense: 0,
+        },
+      ]);
+    });
   });
 });

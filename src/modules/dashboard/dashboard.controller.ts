@@ -3,6 +3,8 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiSuccessResponse } from '../../common/decorators/api-success-response.decorator';
 import { DashboardService } from './dashboard.service';
 import { DashboardChartsDto } from './dto/dashboard-charts.dto';
+import { DashboardComparisonQueryDto } from './dto/dashboard-comparison-query.dto';
+import { DashboardComparisonDto } from './dto/dashboard-comparison.dto';
 import { DashboardQueryDto } from './dto/dashboard-query.dto';
 import { DashboardSummaryDto } from './dto/dashboard-summary.dto';
 
@@ -34,5 +36,18 @@ export class DashboardController {
   })
   getCharts(@Query() query: DashboardQueryDto) {
     return this.dashboardService.getCharts(query);
+  }
+
+  @Get('comparison')
+  @ApiOperation({
+    summary:
+      'Série agregada de entradas/saídas por período (mensal ou semanal) para o gráfico de barras comparativas',
+  })
+  @ApiSuccessResponse(DashboardComparisonDto, {
+    description:
+      'Buckets contínuos do período e comparação com a média dos anteriores.',
+  })
+  getComparison(@Query() query: DashboardComparisonQueryDto) {
+    return this.dashboardService.getComparison(query);
   }
 }

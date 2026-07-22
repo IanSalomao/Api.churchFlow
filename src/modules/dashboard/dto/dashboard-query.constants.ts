@@ -17,3 +17,8 @@ export const DASHBOARD_TRANSACTION_TYPE_FILTERS = [
 
 export type DashboardTransactionTypeFilter =
   (typeof DASHBOARD_TRANSACTION_TYPE_FILTERS)[number];
+
+export const DASHBOARD_COMPARISON_GROUP_BY_OPTIONS = ['month', 'week'] as const;
+
+export type DashboardComparisonGroupBy =
+  (typeof DASHBOARD_COMPARISON_GROUP_BY_OPTIONS)[number];

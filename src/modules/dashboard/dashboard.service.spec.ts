@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
 import { DashboardService } from './dashboard.service';
+import { DashboardComparisonQueryDto } from './dto/dashboard-comparison-query.dto';
 import { DashboardQueryDto } from './dto/dashboard-query.dto';
 
 const NOW = new Date('2026-07-15T12:00:00.000Z');
@@ -8,6 +9,18 @@ const NOW = new Date('2026-07-15T12:00:00.000Z');
 function query(overrides: Partial<DashboardQueryDto> = {}): DashboardQueryDto {
   const dto = new DashboardQueryDto();
   Object.assign(dto, { period: 'currentMonth', type: 'all', ...overrides });
+  return dto;
+}
+
+function comparisonQuery(
+  overrides: Partial<DashboardComparisonQueryDto> = {},
+): DashboardComparisonQueryDto {
+  const dto = new DashboardComparisonQueryDto();
+  Object.assign(dto, {
+    period: 'currentMonth',
+    groupBy: 'month',
+    ...overrides,
+  });
   return dto;
 }
 
@@ -268,9 +281,23 @@ describe('DashboardService', () => {
 
       const result = await service.getCharts(query({ period: 'currentMonth' }));
 
+      const zero = (date: string) => ({ date, income: 0, expense: 0 });
       expect(result.line).toEqual([
         { date: '2026-07-01', income: 500, expense: 0 },
         { date: '2026-07-02', income: 0, expense: 1200 },
+        zero('2026-07-03'),
+        zero('2026-07-04'),
+        zero('2026-07-05'),
+        zero('2026-07-06'),
+        zero('2026-07-07'),
+        zero('2026-07-08'),
+        zero('2026-07-09'),
+        zero('2026-07-10'),
+        zero('2026-07-11'),
+        zero('2026-07-12'),
+        zero('2026-07-13'),
+        zero('2026-07-14'),
+        zero('2026-07-15'),
       ]);
     });
 
@@ -301,6 +328,26 @@ describe('DashboardService', () => {
       expect(result.line).toEqual([
         { date: '2026-05-01', income: 500, expense: 0 },
         { date: '2026-06-01', income: 0, expense: 900 },
+        { date: '2026-07-01', income: 0, expense: 0 },
+      ]);
+    });
+
+    it('preenche com zero todos os dias do período quando não há nenhuma transação', async () => {
+      prisma.tenant.transaction.findMany.mockResolvedValueOnce([]);
+
+      const result = await service.getCharts(
+        query({
+          period: 'custom',
+          dateFrom: '2026-03-10',
+          dateTo: '2026-03-13',
+        }),
+      );
+
+      expect(result.line).toEqual([
+        { date: '2026-03-10', income: 0, expense: 0 },
+        { date: '2026-03-11', income: 0, expense: 0 },
+        { date: '2026-03-12', income: 0, expense: 0 },
+        { date: '2026-03-13', income: 0, expense: 0 },
       ]);
     });
 
@@ -377,6 +424,172 @@ describe('DashboardService', () => {
           },
         }),
       );
+    });
+  });
+
+  describe('getComparison', () => {
+    it('agrupa por mês, preenche buckets contínuos e retorna sampleSize 0 quando há um único bucket', async () => {
+      prisma.tenant.transaction.findMany.mockResolvedValueOnce([
+        { date: new Date('2026-07-05'), value: 500, type: 'income' },
+        { date: new Date('2026-07-10'), value: -200, type: 'expense' },
+      ]);
+
+      const result = await service.getComparison(
+        comparisonQuery({ period: 'currentMonth', groupBy: 'month' }),
+      );
+
+      expect(result.groupBy).toBe('month');
+      expect(result.buckets).toEqual([
+        {
+          periodStart: '2026-07-01',
+          label: 'Jul/26',
+          income: 500,
+          expense: 200,
+        },
+      ]);
+      expect(result.comparison).toEqual({
+        sampleSize: 0,
+        incomeVsAvg: null,
+        expenseVsAvg: null,
+      });
+    });
+
+    it('calcula incomeVsAvg/expenseVsAvg do último bucket vs. a média dos anteriores (exemplo do spec)', async () => {
+      const monthlySummaries: {
+        month: string;
+        income: number;
+        expense: number;
+      }[] = [
+        { month: '2026-02', income: 100000, expense: 60000 },
+        { month: '2026-03', income: 105000, expense: 58000 },
+        { month: '2026-04', income: 98000, expense: 62000 },
+        { month: '2026-05', income: 102000, expense: 59000 },
+        { month: '2026-06', income: 95000, expense: 61000 },
+        { month: '2026-07', income: 90000, expense: 70000 },
+      ];
+      const monthlyRows = monthlySummaries.flatMap(
+        ({ month, income, expense }) => [
+          { date: new Date(`${month}-01`), value: income, type: 'income' },
+          { date: new Date(`${month}-01`), value: -expense, type: 'expense' },
+        ],
+      );
+      prisma.tenant.transaction.findMany.mockResolvedValueOnce(monthlyRows);
+
+      const result = await service.getComparison(
+        comparisonQuery({
+          period: 'custom',
+          dateFrom: '2026-02-01',
+          dateTo: '2026-07-31',
+          groupBy: 'month',
+        }),
+      );
+
+      expect(result.buckets).toEqual([
+        {
+          periodStart: '2026-02-01',
+          label: 'Fev/26',
+          income: 100000,
+          expense: 60000,
+        },
+        {
+          periodStart: '2026-03-01',
+          label: 'Mar/26',
+          income: 105000,
+          expense: 58000,
+        },
+        {
+          periodStart: '2026-04-01',
+          label: 'Abr/26',
+          income: 98000,
+          expense: 62000,
+        },
+        {
+          periodStart: '2026-05-01',
+          label: 'Mai/26',
+          income: 102000,
+          expense: 59000,
+        },
+        {
+          periodStart: '2026-06-01',
+          label: 'Jun/26',
+          income: 95000,
+          expense: 61000,
+        },
+        {
+          periodStart: '2026-07-01',
+          label: 'Jul/26',
+          income: 90000,
+          expense: 70000,
+        },
+      ]);
+      expect(result.comparison).toEqual({
+        sampleSize: 5,
+        incomeVsAvg: -10.0,
+        expenseVsAvg: 16.7,
+      });
+    });
+
+    it('agrupa por semana (domingo a sábado), rotulando a faixa de dias e cruzando o mês quando aplicável', async () => {
+      prisma.tenant.transaction.findMany.mockResolvedValueOnce([
+        { date: new Date('2026-06-30'), value: 1000, type: 'income' },
+        { date: new Date('2026-07-08'), value: -400, type: 'expense' },
+      ]);
+
+      const result = await service.getComparison(
+        comparisonQuery({
+          period: 'custom',
+          dateFrom: '2026-06-28',
+          dateTo: '2026-07-05',
+          groupBy: 'week',
+        }),
+      );
+
+      expect(result.groupBy).toBe('week');
+      expect(result.buckets).toEqual([
+        {
+          periodStart: '2026-06-28',
+          label: '28/jun–04/jul',
+          income: 1000,
+          expense: 0,
+        },
+        {
+          periodStart: '2026-07-05',
+          label: '05–11/jul',
+          income: 0,
+          expense: 400,
+        },
+      ]);
+      // média anterior de expense é 0 → divisão impossível → null
+      expect(result.comparison).toEqual({
+        sampleSize: 1,
+        incomeVsAvg: -100.0,
+        expenseVsAvg: null,
+      });
+    });
+
+    it('aplica categoryIds/ministryId no where, sem filtrar por type (comparison sempre traz os dois tipos)', async () => {
+      await service.getComparison(
+        comparisonQuery({
+          period: 'custom',
+          dateFrom: '2026-02-10',
+          dateTo: '2026-03-20',
+          categoryIds: ['cat-2'],
+          ministryId: 'ministerio-1',
+        }),
+      );
+
+      expect(prisma.tenant.transaction.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          categoryId: { in: ['cat-2'] },
+          ministryId: 'ministerio-1',
+          date: {
+            gte: new Date('2026-02-10'),
+            lte: new Date('2026-03-20'),
+          },
+        },
+        select: { date: true, value: true, type: true },
+      });
     });
   });
 });
