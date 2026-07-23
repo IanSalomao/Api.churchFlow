@@ -328,7 +328,7 @@ describe('Transactions (e2e)', () => {
       const response = await authed.get('/v1/transactions').expect(200);
 
       expect(response.body.data.meta).toMatchObject({ page: 1, limit: 20 });
-      const values = response.body.data.data.map(
+      const values = response.body.data.items.map(
         (t: { value: number }) => t.value,
       );
       expect(values).not.toContain(999);
@@ -339,7 +339,7 @@ describe('Transactions (e2e)', () => {
         .get('/v1/transactions?type=expense')
         .expect(200);
 
-      const types = response.body.data.data.map(
+      const types = response.body.data.items.map(
         (t: { type: string }) => t.type,
       );
       expect(types.every((type: string) => type === 'expense')).toBe(true);
@@ -350,7 +350,7 @@ describe('Transactions (e2e)', () => {
         .get(`/v1/transactions?categoryId=${incomeCategoryId}`)
         .expect(200);
 
-      const categoryIds = response.body.data.data.map(
+      const categoryIds = response.body.data.items.map(
         (t: { category: { id: string } }) => t.category.id,
       );
       expect(categoryIds.every((id: string) => id === incomeCategoryId)).toBe(
@@ -363,7 +363,7 @@ describe('Transactions (e2e)', () => {
         .get('/v1/transactions?dateFrom=2026-06-01&dateTo=2026-06-30')
         .expect(200);
 
-      const descriptions = response.body.data.data.map(
+      const descriptions = response.body.data.items.map(
         (t: { description: string }) => t.description,
       );
       expect(descriptions).toEqual(
@@ -376,7 +376,7 @@ describe('Transactions (e2e)', () => {
         .get('/v1/transactions?search=luz')
         .expect(200);
 
-      const descriptions = response.body.data.data.map(
+      const descriptions = response.body.data.items.map(
         (t: { description: string }) => t.description,
       );
       expect(descriptions).toEqual(['Conta de luz']);

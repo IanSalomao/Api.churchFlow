@@ -173,7 +173,7 @@ describe('Categories (e2e)', () => {
       const response = await authed.get('/v1/categories').expect(200);
 
       expect(response.body.data.meta).toMatchObject({ page: 1, limit: 20 });
-      const names = response.body.data.data.map(
+      const names = response.body.data.items.map(
         (c: { name: string }) => c.name,
       );
       expect(names).toContain('Oferta');
@@ -186,7 +186,7 @@ describe('Categories (e2e)', () => {
         .get('/v1/categories?type=income')
         .expect(200);
 
-      const items = response.body.data.data as {
+      const items = response.body.data.items as {
         name: string;
         type: string;
       }[];
@@ -199,7 +199,7 @@ describe('Categories (e2e)', () => {
         .get('/v1/categories?type=expense')
         .expect(200);
 
-      const items = response.body.data.data as {
+      const items = response.body.data.items as {
         name: string;
         type: string;
       }[];
@@ -265,7 +265,7 @@ describe('Categories (e2e)', () => {
       await authed.delete(`/v1/categories/${categoryId}`).expect(200);
 
       const response = await authed.get('/v1/categories').expect(200);
-      const names = response.body.data.data.map(
+      const names = response.body.data.items.map(
         (c: { name: string }) => c.name,
       );
       expect(names).not.toContain('Dízimo Mensal');

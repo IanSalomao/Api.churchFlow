@@ -181,7 +181,7 @@ describe('Ministries (e2e)', () => {
       const response = await authed.get('/v1/ministries').expect(200);
 
       expect(response.body.data.meta).toMatchObject({ page: 1, limit: 20 });
-      const names = response.body.data.data.map(
+      const names = response.body.data.items.map(
         (m: { name: string }) => m.name,
       );
       expect(names).toContain('Ministério de Casais');
@@ -193,7 +193,7 @@ describe('Ministries (e2e)', () => {
         .get('/v1/ministries?search=casais')
         .expect(200);
 
-      const names = response.body.data.data.map(
+      const names = response.body.data.items.map(
         (m: { name: string }) => m.name,
       );
       expect(names).toEqual(['Ministério de Casais']);

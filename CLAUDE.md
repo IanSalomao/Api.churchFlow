@@ -99,10 +99,10 @@ Cada módulo de feature segue o padrão Nest: `*.module.ts`, `*.controller.ts`, 
 ## Convenções de API
 
 - **Paginação**: offset-based via query params `page` e `limit`.
-- **Envelope de resposta para listagens**:
+- **Envelope de resposta para listagens** (dentro do `data` do envelope padrão `{ success, data }`):
   ```json
   {
-    "data": [ ... ],
+    "items": [ ... ],
     "meta": { "page": 1, "limit": 20, "total": 134, "totalPages": 7 }
   }
   ```
